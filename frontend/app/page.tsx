@@ -4,6 +4,7 @@
 import { useState } from "react";
 import SearchBar from "../components/SearchBar";
 import CurrentWeather from "../components/CurrentWeather";
+import ForecastCards from "@/components/ForecastCards";
 
 export default function Page() {
   const [city, setCity] = useState<string>("");
@@ -14,9 +15,11 @@ export default function Page() {
     location: string;
     date: string;
   } | null>(null);
+  const [forecastData, setForecastData] = useState<any[]>([]); // Forecast data
   const [isCelsius, setIsCelsius] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
 
+  // Fetch current weather data
   const fetchWeatherData = async (
     city: string,
     unit: "metric" | "imperial" = "metric"
@@ -47,16 +50,40 @@ export default function Page() {
     }
   };
 
+  // Fetch forecast data
+  const fetchForecastData = async (
+    city: string,
+    unit: "metric" | "imperial" = "metric"
+  ) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/forecast/${city}/${unit}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch forecast data");
+      }
+
+      const data = await response.json();
+      setForecastData(data); // Save forecast data
+    } catch (error) {
+      console.error("Error fetching forecast data:", error);
+    }
+  };
+
+  // Handle search
   const handleSearch = (city: string) => {
     setCity(city);
     fetchWeatherData(city, isCelsius ? "metric" : "imperial");
+    fetchForecastData(city, isCelsius ? "metric" : "imperial");
   };
 
+  // Toggle temperature unit
   const handleToggleTempUnit = () => {
     setIsCelsius((prev) => {
       const newIsCelsius = !prev;
       if (city) {
         fetchWeatherData(city, newIsCelsius ? "metric" : "imperial");
+        fetchForecastData(city, newIsCelsius ? "metric" : "imperial");
       }
       return newIsCelsius;
     });
@@ -73,14 +100,22 @@ export default function Page() {
       {loading && <div className="mt-6">Loading weather...</div>}
 
       {weatherData && (
-        <div className="flex flex-col justify-center items-center bg-gradient-to-br from-blue-400 to-indigo-500 text-white rounded-2xl shadow-lg p-8 mt-6 w-full max-w-md">
-          <CurrentWeather
-            icon={weatherData.icon}
-            temperature={weatherData.temperature}
-            description={weatherData.description}
-            location={weatherData.location}
-            date={weatherData.date}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-6xl mx-auto mt-6">
+          {/* Left side: Current Weather */}
+          <div className="flex flex-col justify-between bg-gradient-to-br from-blue-400 to-indigo-500 text-white rounded-2xl shadow-lg p-8">
+            <CurrentWeather
+              icon={weatherData.icon}
+              temperature={weatherData.temperature}
+              description={weatherData.description}
+              location={weatherData.location}
+              date={weatherData.date}
+            />
+          </div>
+
+          {/* Right side: Forecast Cards */}
+          <div className="flex flex-col space-y-8">
+            <ForecastCards forecasts={forecastData} />
+          </div>
         </div>
       )}
     </div>
