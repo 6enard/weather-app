@@ -3,8 +3,9 @@
 
 import { useState } from "react";
 import SearchBar from "../components/SearchBar";
-import CurrentWeather from "../components/CurrentWeather";
-import ForecastCards from "@/components/ForecastCards";
+import CurrentWeather from "../components/currentWeather";
+import ForecastCards from "@/components/forecastCards";
+import WeatherDetails from "../components/weatherDetails";
 
 export default function Page() {
   const [city, setCity] = useState<string>("");
@@ -14,12 +15,13 @@ export default function Page() {
     description: string;
     location: string;
     date: string;
+    wind_speed: number;
+    humidity: number;
   } | null>(null);
   const [forecastData, setForecastData] = useState<any[]>([]); // Forecast data
   const [isCelsius, setIsCelsius] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Fetch current weather data
   const fetchWeatherData = async (
     city: string,
     unit: "metric" | "imperial" = "metric"
@@ -41,6 +43,8 @@ export default function Page() {
         description: data.description,
         location: city,
         date: new Date().toLocaleDateString(),
+        wind_speed: data.wind_speed,
+        humidity: data.humidity,
       });
     } catch (error) {
       console.error("Error fetching weather data:", error);
@@ -50,7 +54,6 @@ export default function Page() {
     }
   };
 
-  // Fetch forecast data
   const fetchForecastData = async (
     city: string,
     unit: "metric" | "imperial" = "metric"
@@ -70,14 +73,12 @@ export default function Page() {
     }
   };
 
-  // Handle search
   const handleSearch = (city: string) => {
     setCity(city);
     fetchWeatherData(city, isCelsius ? "metric" : "imperial");
     fetchForecastData(city, isCelsius ? "metric" : "imperial");
   };
 
-  // Toggle temperature unit
   const handleToggleTempUnit = () => {
     setIsCelsius((prev) => {
       const newIsCelsius = !prev;
@@ -112,9 +113,14 @@ export default function Page() {
             />
           </div>
 
-          {/* Right side: Forecast Cards */}
+          {/* Right side: Forecast Cards and Weather Details */}
           <div className="flex flex-col space-y-8">
             <ForecastCards forecasts={forecastData} />
+            <WeatherDetails
+              windSpeed={weatherData.wind_speed}
+              humidity={weatherData.humidity}
+              isLoading={loading}
+            />
           </div>
         </div>
       )}
